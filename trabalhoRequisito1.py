@@ -12,9 +12,9 @@ def is_skin_color(pix, centers):
     norm0 = np.linalg.norm(tuple(map(operator.sub, pix[1:], centers[0])))
     norm1 = np.linalg.norm(tuple(map(operator.sub, pix[1:], centers[1])))
     if norm0 < norm1:
-        return 0
-    else:
         return 255
+    else:
+        return 0
 
 bw_files = [f for f in listdir("SkinDataset/GT_bw/") if isfile(join("SkinDataset/GT_bw/", f))]
 gt_files = [f for f in listdir("SkinDataset/GT/") if isfile(join("SkinDataset/GT/", f))]
@@ -41,7 +41,7 @@ z = []
 for f in gt_files:
     im_color = cv2.imread("SkinDataset/ORI/" + f, 1)
     im_bw = cv2.imread("SkinDataset/GT_bw/" + f, 0)
-    im_yuv = cv2.cvtColor(im_color, cv2.COLOR_BGR2YUV)
+    im_yuv = cv2.cvtColor(im_color, cv2.COLOR_BGR2YCR_CB)
 
     for i in range(0, im_yuv.shape[0]):
         for j in range(0, im_yuv.shape[1]):
@@ -74,8 +74,8 @@ compactness, labels, centers = cv2.kmeans(np.array(z, np.float32), 2, None, crit
 im243 = cv2.imread("SkinDataset/ORI/243.jpg", 1)
 im278 = cv2.imread("SkinDataset/ORI/278.jpg", 1)
 
-im243_yuv = cv2.cvtColor(im243, cv2.COLOR_BGR2YUV)
-im278_yuv = cv2.cvtColor(im278, cv2.COLOR_BGR2YUV)
+im243_yuv = cv2.cvtColor(im243, cv2.COLOR_BGR2YCR_CB)
+im278_yuv = cv2.cvtColor(im278, cv2.COLOR_BGR2YCR_CB)
 
 im243_bw = im_bw.copy()
 im278_bw = im_bw.copy()
