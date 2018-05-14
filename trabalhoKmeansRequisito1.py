@@ -41,7 +41,7 @@ if not isfile('SkinDataset/GT_bw_results/243.jpg') or not isfile('SkinDataset/GT
     labels = None
     centers = None
 
-    if not isfile('labels.npy') or not isfile('centers.npy'):
+    if not isfile('SkinDataset/labels.npy') or not isfile('SkinDataset/centers.npy'):
         for f in gt_files:
             im_color = cv2.imread("SkinDataset/ORI/" + f, 1)
             im_bw = cv2.imread("SkinDataset/GT_bw/" + f, 0)
@@ -74,12 +74,12 @@ if not isfile('SkinDataset/GT_bw_results/243.jpg') or not isfile('SkinDataset/GT
         flags = cv2.KMEANS_USE_INITIAL_LABELS
         compactness, labels, centers = cv2.kmeans(np.array(z, np.float32), 2, None, criteria, 10, flags, centers)
 
-        np.save('labels', labels)
-        np.save('centers', centers)
+        np.save('SkinDataset/labels', labels)
+        np.save('SkinDataset/centers', centers)
 
     else:
-        labels = np.load('labels.npy')
-        centers = np.load('centers.npy')
+        labels = np.load('SkinDataset/labels.npy')
+        centers = np.load('SkinDataset/centers.npy')
         im_bw = cv2.imread("SkinDataset/GT_bw/11.jpg", 0)
 
     im243 = cv2.imread("SkinDataset/ORI/243.jpg", 1)
