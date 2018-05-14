@@ -31,32 +31,40 @@ if bw_files == None or bw_files == []:
         (thresh, im_bw) = cv2.threshold(im_gray, 8, 255, cv2.THRESH_BINARY)
         cv2.imwrite("sfa/GT_bw/" + f, im_bw)
 
-skin_pix = []
-no_skin_pix = []
-
-sum_skin_u = 0
-sum_skin_v = 0
-sum_no_skin_u = 0
-sum_no_skin_v = 0
-
-im_bw = None
-z = []
-
 bw_files = [f for f in listdir("sfa/GT_bw_results/") if isfile(join("sfa/GT_bw_results/", f))]
 bw_files = [f for f in bw_files if f != ".DS_Store" and int(find_between(f, "(", ")")) > 782]
 gt_files = [f for f in gt_files if int(find_between(f, "(", ")")) <= 782]
 
+gt_files_int = [int(find_between(x, "(", ")")) for x in gt_files]
+gt_files_int.sort()
+gt_files = [("img (" + str(f) + ").jpg") for f in gt_files_int]
+
+criteria = (cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+flags = cv2.KMEANS_PP_CENTERS #USE_INITIAL_LABELS
+im_bw = None
+
 if bw_files == None or bw_files == []:
 
     labels = None
-    centers = None
+    centers = []
 
     if not isfile('sfa/labels.npy') or not isfile('sfa/centers.npy'):
 
         print("Training ...")
 
+        count = 0
+
         for f in gt_files:
             print(f)
+
+            skin_pix = []
+            no_skin_pix = []
+            sum_skin_u = 0
+            sum_skin_v = 0
+            sum_no_skin_u = 0
+            sum_no_skin_v = 0
+            z = []
+
             im_color = cv2.imread("sfa/ORI/" + f, 1)
             im_bw = cv2.imread("sfa/GT_bw/" + f, 0)
             im_yuv = cv2.cvtColor(im_color, cv2.COLOR_BGR2YUV)
@@ -73,20 +81,56 @@ if bw_files == None or bw_files == []:
                         sum_no_skin_v = im_yuv[i, j][2]
                     z.append((im_yuv[i, j][1], im_yuv[i, j][2]))
 
-        avg_skin_u = sum_skin_u / len(skin_pix)
-        avg_skin_v = sum_skin_v / len(skin_pix)
-        avg_no_skin_u = sum_no_skin_u / len(no_skin_pix)
-        avg_no_skin_v =  sum_no_skin_v / len(no_skin_pix)
+            avg_skin_u = sum_skin_u / len(skin_pix)
+            avg_skin_v = sum_skin_v / len(skin_pix)
+            avg_no_skin_u = sum_no_skin_u / len(no_skin_pix)
+            avg_no_skin_v =  sum_no_skin_v / len(no_skin_pix)
 
-        centers = np.zeros((2, 2))
-        centers[0, 0] = avg_skin_u
-        centers[0, 1] = avg_skin_v
-        centers[1, 0] = avg_no_skin_u
-        centers[1, 1] = avg_no_skin_v
+            centers_im = np.zeros((2, 2))
+            centers_im[0, 0] = avg_skin_u
+            centers_im[0, 1] = avg_skin_v
+            centers_im[1, 0] = avg_no_skin_u
+            centers_im[1, 1] = avg_no_skin_v
 
-        criteria = (cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
-        flags = cv2.KMEANS_USE_INITIAL_LABELS
-        compactness, labels, centers = cv2.kmeans(np.array(z, np.float32), 2, None, criteria, 10, flags, centers)
+            all_kmeans_colors = np.array(z, np.float32)
+
+            compactness_im, labels_im, centers_im = cv2.kmeans(all_kmeans_colors, 2, None, criteria, 10, flags, centers_im)
+            centers.append(centers_im[0])
+            centers.append(centers_im[1])
+
+        sum_skin_u = 0
+        sum_skin_v = 0
+        sum_no_skin_u = 0
+        sum_no_skin_v = 0
+
+        index = 0
+
+        for c in centers:
+            if index % 2:
+                sum_skin_u += c[0]
+                sum_skin_v += c[1]
+            else:
+                sum_no_skin_u += c[0]
+                sum_no_skin_v += c[1]
+            index += 1
+
+        avg_skin_u = sum_skin_u / (len(centers) / 2)
+        avg_skin_v = sum_skin_v / (len(centers) / 2)
+        avg_no_skin_u = sum_no_skin_u / (len(centers) / 2)
+        avg_no_skin_v =  sum_no_skin_v / (len(centers) / 2)
+
+        centers_kmeans = np.zeros((2, 2))
+        centers_kmeans[0, 0] = avg_skin_u
+        centers_kmeans[0, 1] = avg_skin_v
+        centers_kmeans[1, 0] = avg_no_skin_u
+        centers_kmeans[1, 1] = avg_no_skin_v
+
+        cent = [[c[0], c[1]] for c in centers]
+        cent = np.array(cent, np.float32)
+        N = len(cent)
+        cent = cent.reshape(N, -1)
+
+        compactness, labels, centers = cv2.kmeans(cent, 2, None, criteria, 10, flags, centers_kmeans)
 
         np.save('sfa/labels', labels)
         np.save('sfa/centers', centers)
@@ -94,11 +138,10 @@ if bw_files == None or bw_files == []:
     else:
         print("Já treinou")
 
+        labels = np.load('sfa/labels.npy')
+        centers = np.load('sfa/centers.npy')
+        # im_bw = cv2.imread("SkinDataset/GT_bw/11.jpg", 0)
 
-    #     labels = np.load('labels.npy')
-    #     centers = np.load('centers.npy')
-    #     im_bw = cv2.imread("SkinDataset/GT_bw/11.jpg", 0)
-    #
     # im243 = cv2.imread("SkinDataset/ORI/243.jpg", 1)
     # im278 = cv2.imread("SkinDataset/ORI/278.jpg", 1)
     #
