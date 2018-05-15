@@ -10,9 +10,9 @@ def is_skin_color(pix, centers):
     norm0 = np.linalg.norm(tuple(map(operator.sub, pix[1:], centers[0])))
     norm1 = np.linalg.norm(tuple(map(operator.sub, pix[1:], centers[1])))
     if norm0 < norm1:
-        return 0
-    else:
         return 255
+    else:
+        return 0
 
 def find_between(s, first, last):
     start = s.index(first) + len(first)
@@ -40,7 +40,7 @@ gt_files_int.sort()
 gt_files = [("img (" + str(f) + ").jpg") for f in gt_files_int]
 
 criteria = (cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
-flags = cv2.KMEANS_PP_CENTERS #USE_INITIAL_LABELS
+flags = cv2.KMEANS_PP_CENTERS
 im_bw = None
 
 if bw_files == None or bw_files == []:
@@ -51,8 +51,6 @@ if bw_files == None or bw_files == []:
     if not isfile('sfa/labels.npy') or not isfile('sfa/centers.npy'):
 
         print("Training ...")
-
-        count = 0
 
         for f in gt_files:
             print(f)
@@ -136,78 +134,57 @@ if bw_files == None or bw_files == []:
         np.save('sfa/centers', centers)
 
     else:
-        print("Já treinou")
+        print("Loading data from file ...")
 
         labels = np.load('sfa/labels.npy')
         centers = np.load('sfa/centers.npy')
-        # im_bw = cv2.imread("SkinDataset/GT_bw/11.jpg", 0)
 
-    # im243 = cv2.imread("SkinDataset/ORI/243.jpg", 1)
-    # im278 = cv2.imread("SkinDataset/ORI/278.jpg", 1)
-    #
-    # im243_yuv = cv2.cvtColor(im243, cv2.COLOR_BGR2YUV)
-    # im278_yuv = cv2.cvtColor(im278, cv2.COLOR_BGR2YUV)
-    #
-    # im243_bw = im_bw.copy()
-    # im278_bw = im_bw.copy()
-    #
-    # for i in range(0, im243_yuv.shape[0]):
-    #     for j in range(0, im243_yuv.shape[1]):
-    #         im243_bw[i, j] = is_skin_color(im243_yuv[i, j], centers)
-    #
-    # for i in range(0, im278_yuv.shape[0]):
-    #     for j in range(0, im278_yuv.shape[1]):
-    #         im278_bw[i, j] = is_skin_color(im278_yuv[i, j], centers)
-    #
-    # cv2.imwrite("SkinDataset/GT_bw_results/243.jpg", im243_bw)
-    # cv2.imwrite("SkinDataset/GT_bw_results/278.jpg", im278_bw)
+    gt_files = [f for f in listdir("sfa/GT/") if isfile(join("sfa/GT/", f))]
+    gt_files = [f for f in gt_files if int(find_between(f, "(", ")")) > 782]
+    gt_files_int = [int(find_between(x, "(", ")")) for x in gt_files]
+    gt_files_int.sort()
+    gt_files = [("img (" + str(f) + ").jpg") for f in gt_files_int]
 
-# im_gray = cv2.imread("SkinDataset/GT/243.jpg", 0)
-# (thresh, im_bw) = cv2.threshold(im_gray, 8, 255, cv2.THRESH_BINARY)
-# cv2.imwrite("SkinDataset/GT_bw/243.jpg", im_bw)
-#
-# im_gray = cv2.imread("SkinDataset/GT/278.jpg", 0)
-# (thresh, im_bw) = cv2.threshold(im_gray, 8, 255, cv2.THRESH_BINARY)
-# cv2.imwrite("SkinDataset/GT_bw/278.jpg", im_bw)
+    for f in gt_files:
+        print(f)
+
+        im_bw = cv2.imread("sfa/GT_bw/" + f, 0)
+        im = cv2.imread("sfa/ORI/" + f, 1)
+        im_yuv = cv2.cvtColor(im, cv2.COLOR_BGR2YUV)
+
+        for i in range(0, im_yuv.shape[0]):
+            for j in range(0, im_yuv.shape[1]):
+                im_bw[i, j] = is_skin_color(im_yuv[i, j], centers)
+
+        cv2.imwrite("sfa/GT_bw_results/" + f, im_bw)
 
 # Acurácia & Jaccard Index
 
-# correct_pix_count = 0
-# jaccard_div = 0
-# im_bw = cv2.imread("SkinDataset/GT_bw/243.jpg", 0)
-# im_bw_result = cv2.imread("SkinDataset/GT_bw_results/243.jpg", 0)
-#
-# for i in range(0, im_bw_result.shape[0]):
-#     for j in range(0, im_bw_result.shape[1]):
-#         if im_bw_result[i, j] == im_bw[i, j]:
-#             correct_pix_count += 1
-#             jaccard_div += 1
-#         else:
-#             jaccard_div += 2
-#
-# acurracy = correct_pix_count / (im_bw_result.shape[0] * im_bw_result.shape[1])
-# jaccard_index = correct_pix_count / jaccard_div
-#
-# print("-----------------------")
-# print("Acurracy Img 243: ", acurracy)
-# print("Jaccard Index Img 243: ", jaccard_index)
-#
-# correct_pix_count = 0
-# im_bw = cv2.imread("SkinDataset/GT_bw/278.jpg", 0)
-# im_bw_result = cv2.imread("SkinDataset/GT_bw_results/278.jpg", 0)
-#
-# for i in range(0, im_bw_result.shape[0]):
-#     for j in range(0, im_bw_result.shape[1]):
-#         if im_bw_result[i, j] == im_bw[i, j]:
-#             correct_pix_count += 1
-#             jaccard_div += 1
-#         else:
-#             jaccard_div += 2
-#
-# acurracy = correct_pix_count / (im_bw_result.shape[0] * im_bw_result.shape[1])
-# jaccard_index = correct_pix_count / jaccard_div
-#
-# print("-----------------------")
-# print("Acurracy Img 278: ", acurracy)
-# print("Jaccard Index Img 278: ", jaccard_index)
-# print("-----------------------")
+gt_files = [f for f in listdir("sfa/GT/") if isfile(join("sfa/GT/", f))]
+gt_files = [f for f in gt_files if int(find_between(f, "(", ")")) > 782]
+gt_files_int = [int(find_between(x, "(", ")")) for x in gt_files]
+gt_files_int.sort()
+gt_files = [("img (" + str(f) + ").jpg") for f in gt_files_int]
+
+for f in gt_files:
+    print(f)
+
+    correct_pix_count = 0
+    jaccard_div = 0
+    im_bw = cv2.imread("sfa/GT_bw/" + f, 0)
+    im_bw_result = cv2.imread("sfa/GT_bw_results/" + f, 0)
+
+    for i in range(0, im_bw_result.shape[0]):
+        for j in range(0, im_bw_result.shape[1]):
+            if im_bw_result[i, j] == im_bw[i, j]:
+                correct_pix_count += 1
+                jaccard_div += 1
+            else:
+                jaccard_div += 2
+
+    acurracy = correct_pix_count / (im_bw_result.shape[0] * im_bw_result.shape[1])
+    jaccard_index = correct_pix_count / jaccard_div
+
+    print("-----------------------")
+    print("Acurracy Img 243: ", acurracy)
+    print("Jaccard Index Img 243: ", jaccard_index)
