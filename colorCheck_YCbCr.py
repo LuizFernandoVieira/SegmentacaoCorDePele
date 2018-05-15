@@ -72,7 +72,8 @@ for f in gt_files:
 # ax_clstrd.scatter(*zip(*no_skin_pix), color='b', s=1,  label='No Skin', depthshade=True)
 
 skin = plt.scatter(*zip(*skin_pix), color='r', s=1, alpha=0.01, marker='.', label='Skin')
-no_skin = plt.scatter(*zip(*no_skin_pix), color='b', s=1, alpha=0.01, marker='.', label='No Skin')
+no_skin = plt.scatter(*zip(*no_skin_pix), color='b',
+                      s=1, alpha=0.01, marker='.', label='No Skin')
 legend = plt.legend()
 for lh in legend.legendHandles:
     lh.set_alpha(1)
